@@ -31,11 +31,24 @@ function called_url() {
 $app['debug'] = $conf['debug'];
 
 /////////////////////////////////////////////////////////////////////////////
-// Welcome page
+// Start page
 /////////////////////////////////////////////////////////////////////////////
 $app->get('/', function () {
-  
-  return "This looks promising.";
+
+    // Resources we support
+    $resource_list = array("databases");
+
+    // What's the base URL
+    $base_url = called_url();
+    
+    foreach ( $resource_list as $index => $resource ) {
+      $resources[] = array( "href" => $base_url . "/" . $resource, "name" => $resource );
+    }
+    
+    $response = new Response(json_encode($resources), 200);
+    $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');    
+
+    return $response;
 
 });
 
@@ -58,9 +71,86 @@ $app->get('/databases', function (Silex\Application $app, Request $request) use 
 });
 
 /////////////////////////////////////////////////////////////////////////////
-// Display available databases on a server
+// Display available resources on the database server
 /////////////////////////////////////////////////////////////////////////////
 $app->get('/databases/{id}', function (Silex\Application $app, Request $request, $id) use ($conf) {
+
+    require_once 'MDB2.php';
+
+    // Check that the server exists and has a dsn defined
+    if ( isset($conf['servers'][$id]['dsn']) ) {
+      $dsn = $conf['servers'][$id]['dsn'];
+    } else {
+      return new Response('Database Server ID not found or DSN not defined', 404);
+    }
+
+    // Resources we support
+    $resource_list = array("db", "users");
+
+    // What's the base URL
+    $base_url = called_url();
+    
+    foreach ( $resource_list as $index => $resource ) {
+      $resources[] = array( "href" => $base_url . "/" . $resource, "name" => $resource );
+    }
+    
+    $response = new Response(json_encode($resources), 200);
+    $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');    
+
+    return $response;
+
+});
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Display available databases on a server
+/////////////////////////////////////////////////////////////////////////////
+$app->get('/databases/{id}/db', function (Silex\Application $app, Request $request, $id) use ($conf) {
+
+    require_once 'MDB2.php';
+
+    // Check that the server exists and has a dsn defined
+    if ( isset($conf['servers'][$id]['dsn']) ) {
+      $dsn = $conf['servers'][$id]['dsn'];
+    } else {
+      return new Response('Database Server ID not found or DSN not defined', 404);
+    }
+    
+    $mdb2 =& MDB2::factory($dsn);
+    $mdb2->setOption('debug', $conf['debug']);
+    if (PEAR::isError($mdb2)) {
+      return new Response('Database is not accessible', 503);
+    }
+    
+    // Get a list of databases
+    $statement = $mdb2->prepare('SHOW DATABASES');
+    $res = $statement->execute();
+    $statement->free();
+    
+    // What's the base URL
+    $base_url = called_url();
+    
+    if ( $res->numRows() > 0 ) {
+      while (($row = $res->fetchRow())) {
+        $dbs[] = array( "href" => $base_url . "/db/" . $row[0] , "dbname" => $row[0] );
+      }
+    } else {
+      die("No databases found");
+    }
+  
+    $res->free();
+
+    $response = new Response(json_encode($dbs), 200);
+    $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
+    
+    // TODO: Need to output this as resources
+    return $response;
+});
+
+/////////////////////////////////////////////////////////////////////////////
+// Display available databases on a server
+/////////////////////////////////////////////////////////////////////////////
+$app->get('/databases/{id}/db', function (Silex\Application $app, Request $request, $id) use ($conf) {
 
     require_once 'MDB2.php';
 
@@ -98,14 +188,14 @@ $app->get('/databases/{id}', function (Silex\Application $app, Request $request,
     $response = new Response(json_encode($dbs), 200);
     $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
     
-    // TODO: Need to output this as resources
     return $response;
 });
+
 
 /////////////////////////////////////////////////////////////////////////////
 // Create a database on a particular server
 /////////////////////////////////////////////////////////////////////////////
-$app->post('/databases/{id}/{dbname}', function (Silex\Application $app, Request $request, $id, $dbname) use ($conf) {
+$app->post('/databases/{id}/db/{dbname}', function (Silex\Application $app, Request $request, $id, $dbname) use ($conf) {
     
     if ( $dbname != NULL ) {
 
@@ -136,7 +226,7 @@ $app->post('/databases/{id}/{dbname}', function (Silex\Application $app, Request
 /////////////////////////////////////////////////////////////////////////////
 // Drop a database on a particular server
 /////////////////////////////////////////////////////////////////////////////
-$app->delete('/databases/{id}/{dbname}', function (Silex\Application $app, Request $request, $id, $dbname) use ($conf) {
+$app->delete('/databases/{id}/db/{dbname}', function (Silex\Application $app, Request $request, $id, $dbname) use ($conf) {
 
     if ( $dbname != NULL ) {
 
@@ -164,6 +254,231 @@ $app->delete('/databases/{id}/{dbname}', function (Silex\Application $app, Reque
     
 });
 
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// USERS
+/////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// Display available users on a particular server
+/////////////////////////////////////////////////////////////////////////////
+$app->get('/databases/{id}/users', function (Silex\Application $app, Request $request, $id) use ($conf) {
+
+    require_once 'MDB2.php';
+
+    // Check that the server exists and has a dsn defined
+    if ( isset($conf['servers'][$id]['dsn']) ) {
+      $dsn = $conf['servers'][$id]['dsn'];
+    } else {
+      return new Response('Database Server ID not found or DSN not defined', 404);
+    }
+    
+    $mdb2 =& MDB2::factory($dsn);
+    $mdb2->setOption('debug', $conf['debug']);
+    if (PEAR::isError($mdb2)) {
+      return new Response('Database is not accessible', 503);
+    }
+    
+    // Get a list of databases
+    $statement = $mdb2->prepare('SELECT host, user FROM mysql.user;');
+    $res = $statement->execute();
+    $statement->free();
+    
+    // What's the base URL
+    $base_url = called_url();
+    
+    $users = array();
+    
+    if ( $res->numRows() > 0 ) {
+      while (($row = $res->fetchRow())) {
+        // Join the username 
+        $userathost = $row[1] . "@" . "'" . $row[0] . "'";
+        $users[] = array( "href" => $base_url . "/" . $userathost ,
+              "user" => $row[1],
+              "host" => $row[0],
+              "userathost" => $userathost );
+      }
+    }
+    
+    $res->free();
+
+    $response = new Response(json_encode($users), 200);
+    $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
+    
+    return $response;
+});
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// Display available resources for user
+/////////////////////////////////////////////////////////////////////////////
+$app->get('/databases/{id}/users/{user}', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
+
+    // Check that the server exists and has a dsn defined
+    if ( isset($conf['servers'][$id]['dsn']) ) {
+      $dsn = $conf['servers'][$id]['dsn'];
+    } else {
+      return new Response('Database Server ID not found or DSN not defined', 404);
+    }
+
+    // Resources we support for 
+    $resource_list = array("grants", "dbprivs");
+
+    // What's the base URL
+    $base_url = called_url();
+    
+    foreach ( $resource_list as $index => $resource ) {
+      $resources[] = array( "href" => $base_url . "/" . $resource, "name" => $resource );
+    }
+    
+    $response = new Response(json_encode($resources), 200);
+    $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');    
+
+    return $response;
+    
+
+});
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// Display all grants for user
+/////////////////////////////////////////////////////////////////////////////
+$app->get('/databases/{id}/users/{user}/grants', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
+
+    require_once 'MDB2.php';
+
+    // Check that the server exists and has a dsn defined
+    if ( isset($conf['servers'][$id]['dsn']) ) {
+      $dsn = $conf['servers'][$id]['dsn'];
+    } else {
+      return new Response('Database Server ID not found or DSN not defined', 404);
+    }
+    
+    $mdb2 =& MDB2::factory($dsn);
+    $mdb2->setOption('debug', $conf['debug']);
+    if (PEAR::isError($mdb2)) {
+      return new Response('Database is not accessible', 503);
+    }
+    
+    // Get a list of databases
+    $sql = "SHOW GRANTS FOR " . $user . "";
+    $res =& $mdb2->queryAll($sql);
+    if (PEAR::isError($res)) {
+      return $res->getMessage();
+    }
+
+    foreach ($res as $index => $grant ) {
+      $grants['grants'][] = $grant[0];
+    }
+  
+    $response = new Response(json_encode($grants), 200);
+    $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
+    
+    return $response;
+});
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// Display db privileges
+/////////////////////////////////////////////////////////////////////////////
+$app->get('/databases/{id}/users/{user}/dbprivs', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
+
+    require_once 'MDB2.php';
+
+    // Check that the server exists and has a dsn defined
+    if ( isset($conf['servers'][$id]['dsn']) ) {
+      $dsn = $conf['servers'][$id]['dsn'];
+    } else {
+      return new Response('Database Server ID not found or DSN not defined', 404);
+    }
+    
+    $mdb2 =& MDB2::factory($dsn);
+    $mdb2->setOption('debug', $conf['debug']);
+    if (PEAR::isError($mdb2)) {
+      return new Response('Database is not accessible', 503);
+    }
+    
+    // Get a list of databases
+    $statement = $mdb2->prepare('SELECT Db from db WHERE User = ? and Host = ?');
+    $data = explode("@", $user);
+    $res = $statement->execute($data);
+    $statement->free();
+    
+    // What's the base URL
+    $base_url = called_url();
+    
+    $dbs = array();
+    
+    if ( $res->numRows() > 0 ) {
+      while (($row = $res->fetchRow())) {
+        $dbs[] = array( "href" => $base_url . "/" . $row[0] ,
+          "dbname" => $row[0]
+        );
+      }
+    }
+  
+    $response = new Response(json_encode($dbs), 200);
+    $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
+    
+    return $response;
+});
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// Display db privileges
+/////////////////////////////////////////////////////////////////////////////
+$app->get('/databases/{id}/users/{user}/dbprivs/{dbname}', function (Silex\Application $app, Request $request, $id, $user, $dbname) use ($conf) {
+
+    require_once 'MDB2.php';
+
+    // Check that the server exists and has a dsn defined
+    if ( isset($conf['servers'][$id]['dsn']) ) {
+      $dsn = $conf['servers'][$id]['dsn'];
+    } else {
+      return new Response('Database Server ID not found or DSN not defined', 404);
+    }
+    
+    $mdb2 =& MDB2::factory($dsn);
+    $mdb2->setOption('debug', $conf['debug']);
+    if (PEAR::isError($mdb2)) {
+      return new Response('Database is not accessible', 503);
+    }
+    
+    // Get a list of databases
+    $statement = $mdb2->prepare('SELECT * from db WHERE User = ? and Host = ? and Db = ?');
+    $data = explode("@", $user);
+    $data[] = $dbname;
+    $res = $statement->execute($data);
+    $statement->free();
+    
+    // What's the base URL
+    $base_url = called_url();
+    
+    $grants = array();
+    
+    $col_names = $res->getColumnnames();
+    
+    if ( $res->numRows() > 0 ) {
+      while (($row = $res->fetchRow())) {
+        foreach ( $col_names as $priv => $index ) {
+          if ( preg_match("/_priv/", $priv) ) {
+            $privs[] = array( "priv" => $priv,
+              "value" => $row[$index]
+            );            
+          }
+        }
+      }
+    }
+  
+    $response = new Response(json_encode($privs), 200);
+    $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
+    
+    return $response;
+});
+
+
+// GO GO GO
 $app->run();
 
 ?>

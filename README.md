@@ -2,7 +2,8 @@
 
 dbrestadmin is a project to provide a RESTful interface to DB admin functions. I use
 it for mySQL however it should work for other databases as well.
-My primary use case is the ability to create databases and users for a dev environment.
+My primary use case is the ability to create databases and users in a dev environment
+where we may be deploying test versions. 
 
 ## Usage
 
@@ -12,9 +13,9 @@ http://myhost/dbrestadmin/databases
 
 You will get a list of servers as resources
 
-To create a database you just POST dbname to /databases/ e.g.
+To create a database you just POST dbname to /databases/ e.g. to create testdb
 
-curl -X POST http://myhost/dbrestadmin/databases/0/testdb
+curl -X POST http://myhost/dbrestadmin/databases/0/db/testdb
 
 ### Prerequisites
 
@@ -49,6 +50,6 @@ To configure create a file in the webroot called conf.php which overrides values
 At this point I would copy all the contents from conf_default and change them to your liking.
 mySQLrestadmin user needs to have CREATE database privileges.
 
-## Limitations
+## Security
 
-Currently only one mySQL server is supported. I intend to lift that limit hopefully shortly.
+Security of the REST API is up to you at this point. I use basic auth to access the API.
