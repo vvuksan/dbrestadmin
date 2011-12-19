@@ -1,17 +1,45 @@
-# mySQL Rest Admin
+# DB Rest Admin
 
-mysqladminrest is a project to provide a RESTful interface to mySQL admin functions. 
+dbrestadmin is a project to provide a RESTful interface to DB admin functions. I use
+it for mySQL however it should work for other databases as well.
 My primary use case is the ability to create databases and users for a dev environment.
 
 ## Usage
 
 To get a list of databases use GET request against
 
-http://myhost/mysqlrestadmin/databases
+http://myhost/dbrestadmin/databases
 
 To create a database you just POST dbname to /database e.g.
 
-curl -X POST http://myhost/mysqlrestadmin/database  -d "dbname=test" 
+curl -X POST http://myhost/dbrestadmin/database  -d "dbname=test" 
+
+### Prerequisites
+
+PHP 5.3+
+PHP PEAR
+MDB2 PEAR library
+
+## Installation
+
+Install PHP Pear ie. on Ubuntu
+
+apt-get install php-pear
+
+Install MDB2 pear library and the appropriate driver for the database you want to
+manage e.g.
+
+pear install MDB2
+pear install MDB2#mysql
+
+Copy the contents of the repo into your webroot. If it doesn't work make sure you have AllowOverride
+allow .htaccess. If you want to be lazy just add this.
+
+```
+<Directory /var/www/dbrestadmin>
+AllowOverride All
+</Directory>
+```
 
 ## Configuration
 
