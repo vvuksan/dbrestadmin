@@ -6,13 +6,15 @@ My primary use case is the ability to create databases and users for a dev envir
 
 ## Usage
 
-To get a list of databases use GET request against
+To get a list of database servers use GET request against
 
 http://myhost/dbrestadmin/databases
 
-To create a database you just POST dbname to /database e.g.
+You will get a list of servers as resources
 
-curl -X POST http://myhost/dbrestadmin/database  -d "dbname=test" 
+To create a database you just POST dbname to /databases/ e.g.
+
+curl -X POST http://myhost/dbrestadmin/databases/0/testdb
 
 ### Prerequisites
 
