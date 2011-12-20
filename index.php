@@ -15,6 +15,9 @@ if( file_exists( __DIR__ . "/conf.php" ) ) {
   include_once __DIR__ . "/conf.php";
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// Returns currently called URL
+/////////////////////////////////////////////////////////////////////////////
 function called_url() {
   $pageURL = 'http';
   if ( isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] == "on") {$pageURL .= "s";}
@@ -91,7 +94,8 @@ $app->get('/databases/{id}', function (Silex\Application $app, Request $request,
     $base_url = called_url();
     
     foreach ( $resource_list as $index => $resource ) {
-      $resources[] = array( "href" => $base_url . "/" . $resource, "name" => $resource );
+      $resources[] = array( "href" => $base_url . "/" . $resource,
+        "name" => $resource);
     }
     
     $response = new Response(json_encode($resources), 200);
@@ -116,7 +120,7 @@ $app->get('/databases/{id}/db', function (Silex\Application $app, Request $reque
       return new Response('Database Server ID not found or DSN not defined', 404);
     }
     
-    $mdb2 =& MDB2::factory($dsn);
+    $mdb2 =& MDB2::connect($dsn);
     $mdb2->setOption('debug', $conf['debug']);
     if (PEAR::isError($mdb2)) {
       return new Response('Database is not accessible', 503);
@@ -161,7 +165,7 @@ $app->get('/databases/{id}/db', function (Silex\Application $app, Request $reque
       return new Response('Database Server ID not found or DSN not defined', 404);
     }
     
-    $mdb2 =& MDB2::factory($dsn);
+    $mdb2 =& MDB2::connect($dsn);
     $mdb2->setOption('debug', $conf['debug']);
     if (PEAR::isError($mdb2)) {
       return new Response('Database is not accessible', 503);
@@ -197,15 +201,20 @@ $app->get('/databases/{id}/db', function (Silex\Application $app, Request $reque
 /////////////////////////////////////////////////////////////////////////////
 $app->post('/databases/{id}/db/{dbname}', function (Silex\Application $app, Request $request, $id, $dbname) use ($conf) {
     
-    if ( $dbname != NULL ) {
+    // Make sure dbname contains only alphanumeric characters
+    if ( preg_match('/^[a-zA-Z0-9-]*$/', $dbname) ) {
 
+        return $dbname;
         require_once 'MDB2.php';
     
-        $mdb2 =& MDB2::factory($conf['dsn']);
+        $mdb2 =& MDB2::connect($conf['dsn']);
         $mdb2->setOption('debug', $app['debug']);
         if (PEAR::isError($mdb2)) {
           error_log("I can't connect to the database. Notifying the administrators. Sorry for the inconvenience");
         }
+        
+        
+        # TODO validate dbname
         
         $res =& $mdb2->query('CREATE DATABASE ' . $dbname);
         if (PEAR::isError($res)) {
@@ -218,7 +227,7 @@ $app->post('/databases/{id}/db/{dbname}', function (Silex\Application $app, Requ
         return $response;
     
     } else {
-        return new Response('Invalid request. No DB name (dbname) specified.', 400);
+        return new Response('Invalid request. DB name can only contain alpha numeric characters and a dash.', 400);
     }
     
 });
@@ -228,11 +237,12 @@ $app->post('/databases/{id}/db/{dbname}', function (Silex\Application $app, Requ
 /////////////////////////////////////////////////////////////////////////////
 $app->delete('/databases/{id}/db/{dbname}', function (Silex\Application $app, Request $request, $id, $dbname) use ($conf) {
 
-    if ( $dbname != NULL ) {
+    // Make sure dbname contains only alphanumeric characters
+    if ( preg_match('/^[a-zA-Z0-9-]*$/', $dbname) ) {
 
         require_once 'MDB2.php';
     
-        $mdb2 =& MDB2::factory($conf['dsn']);
+        $mdb2 =& MDB2::connect($conf['dsn']);
         $mdb2->setOption('debug', $app['debug']);
         if (PEAR::isError($mdb2)) {
           error_log("I can't connect to the database. Notifying the administrators. Sorry for the inconvenience");
@@ -274,8 +284,7 @@ $app->get('/databases/{id}/users', function (Silex\Application $app, Request $re
       return new Response('Database Server ID not found or DSN not defined', 404);
     }
     
-    $mdb2 =& MDB2::factory($dsn);
-    $mdb2->setOption('debug', $conf['debug']);
+    $mdb2 =& MDB2::connect($dsn);
     if (PEAR::isError($mdb2)) {
       return new Response('Database is not accessible', 503);
     }
@@ -310,6 +319,68 @@ $app->get('/databases/{id}/users', function (Silex\Application $app, Request $re
 });
 
 /////////////////////////////////////////////////////////////////////////////
+// Create a user on a database server
+/////////////////////////////////////////////////////////////////////////////
+$app->post('/databases/{id}/users/{user}', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
+
+    require_once 'MDB2.php';
+
+    $password = $request->get('password');
+    
+    if ( $password === NULL )
+      return new Response('Password needs to be specified', 503);
+
+    // Check that the server exists and has a dsn defined
+    if ( isset($conf['servers'][$id]['dsn']) ) {
+      $dsn = $conf['servers'][$id]['dsn'];
+    } else {
+      return new Response('Database Server ID not found or DSN not defined', 404);
+    }
+    
+    $mdb2 =& MDB2::connect($dsn);
+    if (PEAR::isError($mdb2)) {
+      return new Response('Database is not accessible', 503);
+    }
+
+    $sql = "CREATE USER " . $user . " IDENTIFIED BY '" . $password  . "'";
+    $res =& $mdb2->queryAll($sql);
+    if (PEAR::isError($res)) {
+      return new Response('User could not be created', 503);
+    }
+
+    return new Response('User created', 201);
+
+});
+
+/////////////////////////////////////////////////////////////////////////////
+// Drop user from database server
+/////////////////////////////////////////////////////////////////////////////
+$app->delete('/databases/{id}/users/{user}', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
+
+    require_once 'MDB2.php';
+
+    // Check that the server exists and has a dsn defined
+    if ( isset($conf['servers'][$id]['dsn']) ) {
+      $dsn = $conf['servers'][$id]['dsn'];
+    } else {
+      return new Response('Database Server ID not found or DSN not defined', 404);
+    }
+    
+    $mdb2 =& MDB2::connect($dsn);
+    if (PEAR::isError($mdb2)) {
+      return new Response('Database is not accessible', 503);
+    }
+
+    $sql = "DROP USER " . $user;
+    $res =& $mdb2->queryAll($sql);
+    if (PEAR::isError($res)) {
+      return new Response('User could not be created', 503);
+    }
+
+    return new Response('User deleted', 201);
+
+});
+
 /////////////////////////////////////////////////////////////////////////////
 // Display available resources for user
 /////////////////////////////////////////////////////////////////////////////
@@ -355,7 +426,7 @@ $app->get('/databases/{id}/users/{user}/grants', function (Silex\Application $ap
       return new Response('Database Server ID not found or DSN not defined', 404);
     }
     
-    $mdb2 =& MDB2::factory($dsn);
+    $mdb2 =& MDB2::connect($dsn);
     $mdb2->setOption('debug', $conf['debug']);
     if (PEAR::isError($mdb2)) {
       return new Response('Database is not accessible', 503);
@@ -393,7 +464,7 @@ $app->get('/databases/{id}/users/{user}/dbprivs', function (Silex\Application $a
       return new Response('Database Server ID not found or DSN not defined', 404);
     }
     
-    $mdb2 =& MDB2::factory($dsn);
+    $mdb2 =& MDB2::connect($dsn);
     $mdb2->setOption('debug', $conf['debug']);
     if (PEAR::isError($mdb2)) {
       return new Response('Database is not accessible', 503);
@@ -401,7 +472,8 @@ $app->get('/databases/{id}/users/{user}/dbprivs', function (Silex\Application $a
     
     // Get a list of databases
     $statement = $mdb2->prepare('SELECT Db from db WHERE User = ? and Host = ?');
-    $data = explode("@", $user);
+    // We might get ' in the username. Strip them out
+    $data = explode("@", str_replace("'", "", $user));
     $res = $statement->execute($data);
     $statement->free();
     
@@ -439,7 +511,7 @@ $app->get('/databases/{id}/users/{user}/dbprivs/{dbname}', function (Silex\Appli
       return new Response('Database Server ID not found or DSN not defined', 404);
     }
     
-    $mdb2 =& MDB2::factory($dsn);
+    $mdb2 =& MDB2::connect($dsn);
     $mdb2->setOption('debug', $conf['debug']);
     if (PEAR::isError($mdb2)) {
       return new Response('Database is not accessible', 503);
@@ -447,7 +519,8 @@ $app->get('/databases/{id}/users/{user}/dbprivs/{dbname}', function (Silex\Appli
     
     // Get a list of databases
     $statement = $mdb2->prepare('SELECT * from db WHERE User = ? and Host = ? and Db = ?');
-    $data = explode("@", $user);
+    // We might get ' in the username. Strip them out
+    $data = explode("@", str_replace("'", "", $user));
     $data[] = $dbname;
     $res = $statement->execute($data);
     $statement->free();
@@ -463,7 +536,7 @@ $app->get('/databases/{id}/users/{user}/dbprivs/{dbname}', function (Silex\Appli
       while (($row = $res->fetchRow())) {
         foreach ( $col_names as $priv => $index ) {
           if ( preg_match("/_priv/", $priv) ) {
-            $privs[] = array( "priv" => $priv,
+            $privs[] = array( "priv" => str_replace("_priv", "", $priv),
               "value" => $row[$index]
             );            
           }
