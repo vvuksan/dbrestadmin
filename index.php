@@ -92,7 +92,7 @@ $app->get('/databases/{id}', function (Silex\Application $app, Request $request,
     }
 
     // Resources we support
-    $resource_list = array("db", "users");
+    $resource_list = array("dbs", "users");
 
     // What's the base URL
     $base_url = called_url();
@@ -113,7 +113,7 @@ $app->get('/databases/{id}', function (Silex\Application $app, Request $request,
 /////////////////////////////////////////////////////////////////////////////
 // Display available databases on a server
 /////////////////////////////////////////////////////////////////////////////
-$app->get('/databases/{id}/db', function (Silex\Application $app, Request $request, $id) use ($conf) {
+$app->get('/databases/{id}/dbs', function (Silex\Application $app, Request $request, $id) use ($conf) {
 
     require_once 'MDB2.php';
     require __DIR__ . "/tools.php";
@@ -159,7 +159,7 @@ $app->get('/databases/{id}/db', function (Silex\Application $app, Request $reque
 /////////////////////////////////////////////////////////////////////////////
 // Display available databases on a server
 /////////////////////////////////////////////////////////////////////////////
-$app->get('/databases/{id}/db', function (Silex\Application $app, Request $request, $id) use ($conf) {
+$app->get('/databases/{id}/dbs', function (Silex\Application $app, Request $request, $id) use ($conf) {
 
     require_once 'MDB2.php';
     require __DIR__ . "/tools.php";
@@ -205,7 +205,7 @@ $app->get('/databases/{id}/db', function (Silex\Application $app, Request $reque
 /////////////////////////////////////////////////////////////////////////////
 // Create a database on a particular server
 /////////////////////////////////////////////////////////////////////////////
-$app->post('/databases/{id}/db/{dbname}', function (Silex\Application $app, Request $request, $id, $dbname) use ($conf) {
+$app->post('/databases/{id}/dbs/{dbname}', function (Silex\Application $app, Request $request, $id, $dbname) use ($conf) {
     
     // Make sure dbname contains only alphanumeric characters
     if ( preg_match('/^[a-zA-Z0-9-]*$/', $dbname) ) {
@@ -241,7 +241,7 @@ $app->post('/databases/{id}/db/{dbname}', function (Silex\Application $app, Requ
 /////////////////////////////////////////////////////////////////////////////
 // Drop a database on a particular server
 /////////////////////////////////////////////////////////////////////////////
-$app->delete('/databases/{id}/db/{dbname}', function (Silex\Application $app, Request $request, $id, $dbname) use ($conf) {
+$app->delete('/databases/{id}/dbs/{dbname}', function (Silex\Application $app, Request $request, $id, $dbname) use ($conf) {
 
     // Make sure dbname contains only alphanumeric characters
     if ( preg_match('/^[a-zA-Z0-9-]*$/', $dbname) ) {
@@ -349,6 +349,7 @@ $app->post('/databases/{id}/users/{user}', function (Silex\Application $app, Req
       return new Response('Database is not accessible', 503);
     }
 
+    // TODO validate user
     $sql = "CREATE USER " . $user . " IDENTIFIED BY '" . $password  . "'";
     $res =& $mdb2->queryAll($sql);
     if (PEAR::isError($res)) {
@@ -378,6 +379,7 @@ $app->delete('/databases/{id}/users/{user}', function (Silex\Application $app, R
       return new Response('Database is not accessible', 503);
     }
 
+    // TODO validate sanitize user
     $sql = "DROP USER " . $user;
     $res =& $mdb2->queryAll($sql);
     if (PEAR::isError($res)) {
@@ -402,7 +404,7 @@ $app->get('/databases/{id}/users/{user}', function (Silex\Application $app, Requ
       return new Response('Database Server ID not found or DSN not defined', 404);
     }
 
-    // Resources we support for 
+    // Resources we support
     $resource_list = array("grants", "dbprivs");
 
     // What's the base URL
@@ -420,7 +422,6 @@ $app->get('/databases/{id}/users/{user}', function (Silex\Application $app, Requ
 
 });
 
-/////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 // Display all grants for user
 /////////////////////////////////////////////////////////////////////////////
@@ -443,6 +444,7 @@ $app->get('/databases/{id}/users/{user}/grants', function (Silex\Application $ap
     }
     
     // Get a list of databases
+    // TODO figure out a way to validate/sanitize USER
     $sql = "SHOW GRANTS FOR " . $user . "";
     $res =& $mdb2->queryAll($sql);
     if (PEAR::isError($res)) {
@@ -458,6 +460,50 @@ $app->get('/databases/{id}/users/{user}/grants', function (Silex\Application $ap
     
     return $response;
 });
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Add grants for user
+/////////////////////////////////////////////////////////////////////////////
+$app->post('/databases/{id}/users/{user}/grants', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
+
+    require_once 'MDB2.php';
+    require __DIR__ . "/tools.php";
+
+    $grants = $request->get('grants');
+    $database = $request->get('database');
+    
+    if ( $grants === NULL )
+      return new Response('You need to specify grants', 503);
+
+    // Make sure DB name has been specified and that dbname is proper ie. alphanumeric
+    if ( $database === NULL || ! preg_match('/^[a-zA-Z0-9-]*$/', $database) )
+      return new Response('You need to specify a database or DB name is invalid', 503);
+
+    // Check that the server exists and has a dsn defined
+    if ( isset($conf['servers'][$id]['dsn']) ) {
+      $dsn = $conf['servers'][$id]['dsn'];
+    } else {
+      return new Response('Database Server ID not found or DSN not defined', 404);
+    }
+    
+    $mdb2 =& MDB2::connect($dsn);
+    if (PEAR::isError($mdb2)) {
+      return new Response('Database is not accessible', 503);
+    }
+
+    // TODO validate user
+    $sql = "GRANT " . $grants . " ON " . $database . ".* TO " . $user;
+    $res =& $mdb2->queryAll($sql);
+    if (PEAR::isError($res)) {
+      return new Response('Grants could not be added. Message' . $res->getMessage(), 503);
+    }
+
+    return new Response('Grants added', 201);
+
+});
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////

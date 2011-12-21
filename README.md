@@ -13,13 +13,34 @@ To get a list of database servers use GET request against
 http://myhost/dbrestadmin/databases
 ```
 
-You will get a list of servers as resources
+You will get a list of servers as resources. Follow it to figure out what you can do.
 
 To create a database you just POST dbname to /databases/ e.g. to create testdb
 
 ```
-curl -X POST http://myhost/dbrestadmin/databases/0/db/testdb
+curl -X POST http://myhost/dbrestadmin/databases/0/dbs/testdb
 ```
+Databases can only contain alphanumeric characters and a dash.
+
+To create a user
+
+```
+curl -X POST "http://localhost:8000/dbrestadmin/databases/0/users/test2@localhost" -d "password=test"
+```
+
+This translates to
+
+CREATE USER test2@localhost IDENTIFIED BY 'test'
+
+To add grants to a user
+
+curl -X POST "http://localhost:8000/dbrestadmin/databases/0/users/test2@'localhost'/grants" -d "grants=all privileges&database=testdb"
+
+This translates to
+
+GRANT ALL PRIVILEGES ON testdb.* TO test2@'localhost'
+
+
 
 ### Prerequisites
 
@@ -67,4 +88,7 @@ $conf['servers'][] = array (
 
 ## Security
 
-Security of the REST API is up to you at this point. I use basic auth to access the API.
+Security of the REST API is not that great at this point. You may want at a minimum
+use basic auth to access the API. Even with basic auth some of the functions like user
+creation do not have proper input validation/sanitization so beware. I will add those
+over time.
