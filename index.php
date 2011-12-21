@@ -38,6 +38,7 @@ $app['debug'] = $conf['debug'];
 /////////////////////////////////////////////////////////////////////////////
 $app->get('/', function () {
 
+    require __DIR__ . "/tools.php";
     // Resources we support
     $resource_list = array("databases");
 
@@ -48,7 +49,7 @@ $app->get('/', function () {
       $resources[] = array( "href" => $base_url . "/" . $resource, "name" => $resource );
     }
     
-    $response = new Response(json_encode($resources), 200);
+    $response = new Response(json_prettyprint(json_encode($resources)), 200);
     $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');    
 
     return $response;
@@ -60,13 +61,15 @@ $app->get('/', function () {
 /////////////////////////////////////////////////////////////////////////////
 $app->get('/databases', function (Silex\Application $app, Request $request) use ($conf) {
 
+  require __DIR__ . "/tools.php";
+
   $servers = array();
 
   // Iterate through the list of configured servers
   foreach ( $conf['servers'] as $index => $server ) {
     $servers[] = array( "href" => called_url() . "/" . $index  ,"name" => $server['name'], "type" => $server['type'] );
   }
-  $response = new Response(json_encode($servers), 200);
+  $response = new Response(json_prettyprint(json_encode($servers)), 200);
   $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
 
   return $response;
@@ -79,6 +82,7 @@ $app->get('/databases', function (Silex\Application $app, Request $request) use 
 $app->get('/databases/{id}', function (Silex\Application $app, Request $request, $id) use ($conf) {
 
     require_once 'MDB2.php';
+    require __DIR__ . "/tools.php";
 
     // Check that the server exists and has a dsn defined
     if ( isset($conf['servers'][$id]['dsn']) ) {
@@ -98,7 +102,7 @@ $app->get('/databases/{id}', function (Silex\Application $app, Request $request,
         "name" => $resource);
     }
     
-    $response = new Response(json_encode($resources), 200);
+    $response = new Response(json_prettyprint(json_encode($resources)), 200);
     $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');    
 
     return $response;
@@ -112,6 +116,7 @@ $app->get('/databases/{id}', function (Silex\Application $app, Request $request,
 $app->get('/databases/{id}/db', function (Silex\Application $app, Request $request, $id) use ($conf) {
 
     require_once 'MDB2.php';
+    require __DIR__ . "/tools.php";
 
     // Check that the server exists and has a dsn defined
     if ( isset($conf['servers'][$id]['dsn']) ) {
@@ -144,7 +149,7 @@ $app->get('/databases/{id}/db', function (Silex\Application $app, Request $reque
   
     $res->free();
 
-    $response = new Response(json_encode($dbs), 200);
+    $response = new Response(json_prettyprint(json_encode($dbs)), 200);
     $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
     
     // TODO: Need to output this as resources
@@ -157,6 +162,7 @@ $app->get('/databases/{id}/db', function (Silex\Application $app, Request $reque
 $app->get('/databases/{id}/db', function (Silex\Application $app, Request $request, $id) use ($conf) {
 
     require_once 'MDB2.php';
+    require __DIR__ . "/tools.php";
 
     // Check that the server exists and has a dsn defined
     if ( isset($conf['servers'][$id]['dsn']) ) {
@@ -189,7 +195,7 @@ $app->get('/databases/{id}/db', function (Silex\Application $app, Request $reque
   
     $res->free();
 
-    $response = new Response(json_encode($dbs), 200);
+    $response = new Response(json_prettyprint(json_encode($dbs)), 200);
     $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
     
     return $response;
@@ -276,6 +282,7 @@ $app->delete('/databases/{id}/db/{dbname}', function (Silex\Application $app, Re
 $app->get('/databases/{id}/users', function (Silex\Application $app, Request $request, $id) use ($conf) {
 
     require_once 'MDB2.php';
+    require __DIR__ . "/tools.php";
 
     // Check that the server exists and has a dsn defined
     if ( isset($conf['servers'][$id]['dsn']) ) {
@@ -312,7 +319,7 @@ $app->get('/databases/{id}/users', function (Silex\Application $app, Request $re
     
     $res->free();
 
-    $response = new Response(json_encode($users), 200);
+    $response = new Response(json_prettyprint(json_encode($users)), 200);
     $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
     
     return $response;
@@ -386,6 +393,8 @@ $app->delete('/databases/{id}/users/{user}', function (Silex\Application $app, R
 /////////////////////////////////////////////////////////////////////////////
 $app->get('/databases/{id}/users/{user}', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
 
+    require __DIR__ . "/tools.php";
+
     // Check that the server exists and has a dsn defined
     if ( isset($conf['servers'][$id]['dsn']) ) {
       $dsn = $conf['servers'][$id]['dsn'];
@@ -403,7 +412,7 @@ $app->get('/databases/{id}/users/{user}', function (Silex\Application $app, Requ
       $resources[] = array( "href" => $base_url . "/" . $resource, "name" => $resource );
     }
     
-    $response = new Response(json_encode($resources), 200);
+    $response = new Response(json_prettyprint(json_encode($resources)), 200);
     $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');    
 
     return $response;
@@ -418,6 +427,7 @@ $app->get('/databases/{id}/users/{user}', function (Silex\Application $app, Requ
 $app->get('/databases/{id}/users/{user}/grants', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
 
     require_once 'MDB2.php';
+    require __DIR__ . "/tools.php";
 
     // Check that the server exists and has a dsn defined
     if ( isset($conf['servers'][$id]['dsn']) ) {
@@ -443,7 +453,7 @@ $app->get('/databases/{id}/users/{user}/grants', function (Silex\Application $ap
       $grants['grants'][] = $grant[0];
     }
   
-    $response = new Response(json_encode($grants), 200);
+    $response = new Response(json_prettyprint(json_encode($grants)), 200);
     $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
     
     return $response;
@@ -456,6 +466,7 @@ $app->get('/databases/{id}/users/{user}/grants', function (Silex\Application $ap
 $app->get('/databases/{id}/users/{user}/dbprivs', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
 
     require_once 'MDB2.php';
+    require __DIR__ . "/tools.php";
 
     // Check that the server exists and has a dsn defined
     if ( isset($conf['servers'][$id]['dsn']) ) {
@@ -490,7 +501,7 @@ $app->get('/databases/{id}/users/{user}/dbprivs', function (Silex\Application $a
       }
     }
   
-    $response = new Response(json_encode($dbs), 200);
+    $response = new Response(json_prettyprint(json_encode($dbs)), 200);
     $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
     
     return $response;
@@ -503,6 +514,7 @@ $app->get('/databases/{id}/users/{user}/dbprivs', function (Silex\Application $a
 $app->get('/databases/{id}/users/{user}/dbprivs/{dbname}', function (Silex\Application $app, Request $request, $id, $user, $dbname) use ($conf) {
 
     require_once 'MDB2.php';
+    require __DIR__ . "/tools.php";
 
     // Check that the server exists and has a dsn defined
     if ( isset($conf['servers'][$id]['dsn']) ) {
@@ -544,7 +556,7 @@ $app->get('/databases/{id}/users/{user}/dbprivs/{dbname}', function (Silex\Appli
       }
     }
   
-    $response = new Response(json_encode($privs), 200);
+    $response = new Response(json_prettyprint(json_encode($privs)), 200);
     $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
     
     return $response;
