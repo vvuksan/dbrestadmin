@@ -6,7 +6,11 @@ Databases represents all database (servers) defined
 
 ### List Resource
 
-```/dbrestadmin/databases```
+
+```
+/dbrestadmin/v1/databases
+```
+
 
 ### GET
 
@@ -29,7 +33,9 @@ Returns a list of all defined database servers (identified with different names 
 
 ### Instance Resource
 
-```/dbrestadmin/databases/{db_id}```
+```
+/dbrestadmin/v1/databases/{db_id}
+```
 
 Database instance resource represents a single database server. Returns list of
 resources that can be managed. Currently those are dbs (different database names)
@@ -37,7 +43,9 @@ and users.
 
 ### GET
 
-```GET /dbrestadmin/databases/{db_id} HTTP/1.1```
+```
+GET /dbrestadmin/v1/databases/{db_id} HTTP/1.1
+```
 
 ```
 [
@@ -54,13 +62,13 @@ and users.
 
 ### Instance Resource
 
-```/dbrestadmin/databases/{db_id}/dbs```
+```/dbrestadmin/v1/databases/{db_id}/dbs```
 
 Represents databases (dbnames) on a single database server.
 
 ### GET
 
-```GET /dbrestadmin/databases/{db_id}/dbs HTTP/1.1```
+```GET /dbrestadmin/v1/databases/{db_id}/dbs HTTP/1.1```
 
 Returns a list of databases on the database server
 
@@ -83,7 +91,9 @@ Returns a list of databases on the database server
 
 ### Instance Resource
 
-```/dbrestadmin/databases/{db_id}/dbs/{db_name}```
+```
+/dbrestadmin/v1/databases/{db_id}/dbs/{db_name}
+```
 
 ### GET
 
@@ -91,7 +101,9 @@ Not supported
 
 ### POST
 
-```POST /dbrestadmin/databases/{db_id}/dbs/{db_name} HTTP/1.1```
+```
+POST /dbrestadmin/v1/databases/{db_id}/dbs/{db_name} HTTP/1.1
+```
 
 Creates a database with {db_name} on database server
 
