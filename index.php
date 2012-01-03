@@ -33,10 +33,12 @@ function called_url() {
 // Should be false if in production
 $app['debug'] = $conf['debug'];
 
+$api_ver = "/v1";
+
 /////////////////////////////////////////////////////////////////////////////
 // Start page
 /////////////////////////////////////////////////////////////////////////////
-$app->get('/', function () {
+$app->get($api_ver . '/', function () {
 
     require __DIR__ . "/tools.php";
     // Resources we support
@@ -59,7 +61,7 @@ $app->get('/', function () {
 /////////////////////////////////////////////////////////////////////////////
 // Display available databases
 /////////////////////////////////////////////////////////////////////////////
-$app->get('/databases', function (Silex\Application $app, Request $request) use ($conf) {
+$app->get($api_ver . '/databases', function (Silex\Application $app, Request $request) use ($conf) {
 
   require __DIR__ . "/tools.php";
 
@@ -79,7 +81,7 @@ $app->get('/databases', function (Silex\Application $app, Request $request) use 
 /////////////////////////////////////////////////////////////////////////////
 // Display available resources on the database server
 /////////////////////////////////////////////////////////////////////////////
-$app->get('/databases/{id}', function (Silex\Application $app, Request $request, $id) use ($conf) {
+$app->get($api_ver . '/databases/{id}', function (Silex\Application $app, Request $request, $id) use ($conf) {
 
     require_once 'MDB2.php';
     require __DIR__ . "/tools.php";
@@ -113,7 +115,7 @@ $app->get('/databases/{id}', function (Silex\Application $app, Request $request,
 /////////////////////////////////////////////////////////////////////////////
 // Display available databases on a server
 /////////////////////////////////////////////////////////////////////////////
-$app->get('/databases/{id}/dbs', function (Silex\Application $app, Request $request, $id) use ($conf) {
+$app->get($api_ver . '/databases/{id}/dbs', function (Silex\Application $app, Request $request, $id) use ($conf) {
 
     require_once 'MDB2.php';
     require __DIR__ . "/tools.php";
@@ -159,7 +161,7 @@ $app->get('/databases/{id}/dbs', function (Silex\Application $app, Request $requ
 /////////////////////////////////////////////////////////////////////////////
 // Display available databases on a server
 /////////////////////////////////////////////////////////////////////////////
-$app->get('/databases/{id}/dbs', function (Silex\Application $app, Request $request, $id) use ($conf) {
+$app->get($api_ver . '/databases/{id}/dbs', function (Silex\Application $app, Request $request, $id) use ($conf) {
 
     require_once 'MDB2.php';
     require __DIR__ . "/tools.php";
@@ -205,7 +207,7 @@ $app->get('/databases/{id}/dbs', function (Silex\Application $app, Request $requ
 /////////////////////////////////////////////////////////////////////////////
 // Create a database on a particular server
 /////////////////////////////////////////////////////////////////////////////
-$app->post('/databases/{id}/dbs/{dbname}', function (Silex\Application $app, Request $request, $id, $dbname) use ($conf) {
+$app->post($api_ver . '/databases/{id}/dbs/{dbname}', function (Silex\Application $app, Request $request, $id, $dbname) use ($conf) {
     
     // Make sure dbname contains only alphanumeric characters
     if ( preg_match('/^[a-zA-Z0-9-]*$/', $dbname) ) {
@@ -241,7 +243,7 @@ $app->post('/databases/{id}/dbs/{dbname}', function (Silex\Application $app, Req
 /////////////////////////////////////////////////////////////////////////////
 // Drop a database on a particular server
 /////////////////////////////////////////////////////////////////////////////
-$app->delete('/databases/{id}/dbs/{dbname}', function (Silex\Application $app, Request $request, $id, $dbname) use ($conf) {
+$app->delete($api_ver . '/databases/{id}/dbs/{dbname}', function (Silex\Application $app, Request $request, $id, $dbname) use ($conf) {
 
     // Make sure dbname contains only alphanumeric characters
     if ( preg_match('/^[a-zA-Z0-9-]*$/', $dbname) ) {
@@ -328,7 +330,7 @@ $app->get('/databases/{id}/users', function (Silex\Application $app, Request $re
 /////////////////////////////////////////////////////////////////////////////
 // Create a user on a database server
 /////////////////////////////////////////////////////////////////////////////
-$app->post('/databases/{id}/users/{user}', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
+$app->post($api_ver . '/databases/{id}/users/{user}', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
 
     require_once 'MDB2.php';
 
@@ -363,7 +365,7 @@ $app->post('/databases/{id}/users/{user}', function (Silex\Application $app, Req
 /////////////////////////////////////////////////////////////////////////////
 // Drop user from database server
 /////////////////////////////////////////////////////////////////////////////
-$app->delete('/databases/{id}/users/{user}', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
+$app->delete($api_ver . '/databases/{id}/users/{user}', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
 
     require_once 'MDB2.php';
 
@@ -425,7 +427,7 @@ $app->get('/databases/{id}/users/{user}', function (Silex\Application $app, Requ
 /////////////////////////////////////////////////////////////////////////////
 // Display all grants for user
 /////////////////////////////////////////////////////////////////////////////
-$app->get('/databases/{id}/users/{user}/grants', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
+$app->get($api_ver . '/databases/{id}/users/{user}/grants', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
 
     require_once 'MDB2.php';
     require __DIR__ . "/tools.php";
@@ -465,7 +467,7 @@ $app->get('/databases/{id}/users/{user}/grants', function (Silex\Application $ap
 /////////////////////////////////////////////////////////////////////////////
 // Add grants for user
 /////////////////////////////////////////////////////////////////////////////
-$app->post('/databases/{id}/users/{user}/grants', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
+$app->post($api_ver . '/databases/{id}/users/{user}/grants', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
 
     require_once 'MDB2.php';
     require __DIR__ . "/tools.php";
