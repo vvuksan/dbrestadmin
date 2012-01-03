@@ -280,7 +280,7 @@ $app->delete($api_ver . '/databases/{id}/dbs/{dbname}', function (Silex\Applicat
 /////////////////////////////////////////////////////////////////////////////
 // Display available users on a particular server
 /////////////////////////////////////////////////////////////////////////////
-$app->get('/databases/{id}/users', function (Silex\Application $app, Request $request, $id) use ($conf) {
+$app->get($api_ver . '/databases/{id}/users', function (Silex\Application $app, Request $request, $id) use ($conf) {
 
     require_once 'MDB2.php';
     require __DIR__ . "/tools.php";
@@ -394,7 +394,7 @@ $app->delete($api_ver . '/databases/{id}/users/{user}', function (Silex\Applicat
 /////////////////////////////////////////////////////////////////////////////
 // Display available resources for user
 /////////////////////////////////////////////////////////////////////////////
-$app->get('/databases/{id}/users/{user}', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
+$app->get($api_ver . '/databases/{id}/users/{user}', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
 
     require __DIR__ . "/tools.php";
 
@@ -472,7 +472,7 @@ $app->post($api_ver . '/databases/{id}/users/{user}/grants', function (Silex\App
     require __DIR__ . "/tools.php";
 
     $grants = $request->get('grants');
-    $database = $request->get('database');
+    $database = $request->get('dbname');
     
     if ( $grants === NULL )
       return new Response('You need to specify grants', 503);
@@ -510,7 +510,7 @@ $app->post($api_ver . '/databases/{id}/users/{user}/grants', function (Silex\App
 /////////////////////////////////////////////////////////////////////////////
 // Display db privileges
 /////////////////////////////////////////////////////////////////////////////
-$app->get('/databases/{id}/users/{user}/dbprivs', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
+$app->get($api_ver . '/databases/{id}/users/{user}/dbprivs', function (Silex\Application $app, Request $request, $id, $user) use ($conf) {
 
     require_once 'MDB2.php';
     require __DIR__ . "/tools.php";
@@ -558,7 +558,7 @@ $app->get('/databases/{id}/users/{user}/dbprivs', function (Silex\Application $a
 /////////////////////////////////////////////////////////////////////////////
 // Display db privileges
 /////////////////////////////////////////////////////////////////////////////
-$app->get('/databases/{id}/users/{user}/dbprivs/{dbname}', function (Silex\Application $app, Request $request, $id, $user, $dbname) use ($conf) {
+$app->get($api_ver . '/databases/{id}/users/{user}/dbprivs/{dbname}', function (Silex\Application $app, Request $request, $id, $user, $dbname) use ($conf) {
 
     require_once 'MDB2.php';
     require __DIR__ . "/tools.php";
