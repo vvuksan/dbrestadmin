@@ -2,7 +2,8 @@
 
 ## Databases
 
-Databases represents all database (servers) defined
+Databases represents all database (servers) dbrestadmin knows of. These are
+defined in conf.php
 
 ### List Resource
 
@@ -19,12 +20,12 @@ Returns a list of all defined database servers (identified with different names 
 ```
 [
   {
-    "href": "http:\/\/localhost:8000\/dbrestadmin\/databases\/0",
+    "href": "http:\/\/localhost:8000\/v1/dbrestadmin\/databases\/0",
     "name": "Localhost",
     "type": "mysql"
   },
   {
-    "href": "http:\/\/localhost:8000\/dbrestadmin\/databases\/1",
+    "href": "http:\/\/localhost:8000\/v1/dbrestadmin\/databases\/1",
     "name": "engsw-irva-09.broadcom.com",
     "type": "mysql"
   }
@@ -105,7 +106,27 @@ Not supported
 POST /dbrestadmin/v1/databases/{db_id}/dbs/{db_name} HTTP/1.1
 ```
 
-Creates a database with {db_name} on database server
+```
+Database created
+```
 
+Creates a database with {db_name} on database server. Database name can contain
+only alphanumeric characters and dashes e.g. needs to match this regex
+^[a-zA-Z0-9-]*$. API will return a HTTP 201 if DB has been created,
+400 if DB name is not valid.
+
+
+
+### POST
+
+```
+DELETE /dbrestadmin/v1/databases/{db_id}/dbs/{db_name} HTTP/1.1
+```
+
+```
+Resource deleted successfully
+```
+
+Deletes the database
 
 

@@ -212,13 +212,12 @@ $app->post($api_ver . '/databases/{id}/dbs/{dbname}', function (Silex\Applicatio
     // Make sure dbname contains only alphanumeric characters
     if ( preg_match('/^[a-zA-Z0-9-]*$/', $dbname) ) {
 
-        return $dbname;
         require_once 'MDB2.php';
     
         $mdb2 =& MDB2::connect($conf['dsn']);
         $mdb2->setOption('debug', $app['debug']);
         if (PEAR::isError($mdb2)) {
-          error_log("I can't connect to the database. Notifying the administrators. Sorry for the inconvenience");
+          return new Response("I can't connect to the database. Notifying the administrators. Sorry for the inconvenience", 500);
         }
         
         
@@ -226,7 +225,7 @@ $app->post($api_ver . '/databases/{id}/dbs/{dbname}', function (Silex\Applicatio
         
         $res =& $mdb2->query('CREATE DATABASE ' . $dbname);
         if (PEAR::isError($res)) {
-            return $res->getMessage();
+            return new Response("Create failed due to " . $res->getMessage(), 400);
         }
 
         $response = new Response("Database created", 201);
